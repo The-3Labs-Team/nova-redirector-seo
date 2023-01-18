@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton;
+namespace The3LabsTeam\NovaRedirectorSeo;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use VendorName\Skeleton\Commands\SkeletonCommand;
+use The3LabsTeam\NovaRedirectorSeo\Commands\NovaRedirectorSeoCommand;
 
-class SkeletonServiceProvider extends PackageServiceProvider
+class NovaRedirectorSeoServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
@@ -16,10 +16,10 @@ class SkeletonServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('skeleton')
+            ->name('nova-redirector-seo')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_skeleton_table')
-            ->hasCommand(SkeletonCommand::class);
+            ->hasMigration('create_nova-redirector-seo_table')
+            ->hasCommand(NovaRedirectorSeoCommand::class);
     }
 }

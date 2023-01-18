@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace The3LabsTeam\NovaRedirectorSeo\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class NovaRedirectorSeoCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'nova-redirector-seo';
 
     public $description = 'My command';
 
