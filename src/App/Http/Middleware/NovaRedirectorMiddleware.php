@@ -26,7 +26,9 @@ class NovaRedirectorMiddleware
             "nova-redirector-seo.{$path}",
             config('nova-redirector-seo.cache.ttl'),
             function () use ($path) {
-                return NovaRedirectorSeo::where('from_url', 'regexp', $path)->first();
+                return NovaRedirectorSeo::where('from_url', 'regexp', $path)
+                    ->where('enabled', true)
+                    ->first();
             }
         );
 
