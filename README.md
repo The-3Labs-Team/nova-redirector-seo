@@ -5,6 +5,15 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/the-3labs-team/nova-redirector-seo/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/the-3labs-team/nova-redirector-seo/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/the-3labs-team/nova-redirector-seo.svg?style=flat-square)](https://packagist.org/packages/the-3labs-team/nova-redirector-seo)
 
+NovaRedirectorSEO is a all-in-one SEO package for Laravel Nova. It provides a simple way to manage your SEO redirects.
+
+![Demo Redirector SEO Laravel Nova](./assets/demo.gif)
+
+Why choose NovaRedirectorSEO?
+* **Pre-configured Laravel Nova resource**, you need only to install, register and configure the package.
+* **Middleware** to handle redirects, you can use it in your routes or in your controllers.
+* **Cache support**, based on your configuration, the package will cache the redirects.
+
 ## Installation
 
 You can install the package via composer:
@@ -30,21 +39,51 @@ This is the contents of the published config file:
 
 ```php
 return [
+    'cache' => [
+        'ttl' => 60 * 60 * 24 * 7, // 7 days
+    ],
 ];
 ```
 
-Optionally, you can publish the views using
+It will use the default cache driver configured in your `config/cache.php` file.
 
-```bash
-php artisan vendor:publish --tag="nova-redirector-seo-views"
-```
+If you want to disable the cache, you can set the `ttl` to `null`.
 
 ## Usage
 
+First, register the `NovaRedirectorSeo` tool in your `/app/Providers/NovaServiceProvider.php` (you will probably have to add the entire function):
+
 ```php
-$novaRedirectorSeo = new The3LabsTeam\NovaRedirectorSeo();
-echo $novaRedirectorSeo->echoPhrase('Hello, The3LabsTeam!');
+    /**
+     * Register the application's Nova resources.
+     *
+     * @return void
+     */
+    protected function resources()
+    {
+        Nova::resourcesIn(app_path('Nova'));
+
+        Nova::resources([
+            \The3LabsTeam\NovaRedirectorSeo\App\Nova\NovaRedirectorSeo::class,
+        ]);
+    }
 ```
+
+Now you can access the tool in your Nova panel, under the "SEO" menu.
+
+NovaRedirectorSeo is provided with a middleware that will redirect the user to the correct URL, if the current URL is not the correct one.
+
+You can add this middleware to your `app/Http/Kernel.php` file:
+
+```php
+    protected $middlewareGroups = [
+        'web' => [
+            // ...
+            \The3LabsTeam\NovaRedirectorSeo\App\Http\Middleware\NovaRedirectorSeoMiddleware::class,
+        ],
+    ];
+```
+
 
 ## Testing
 

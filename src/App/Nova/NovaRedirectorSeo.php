@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Nova;
+namespace The3LabsTeam\NovaRedirectorSeo\App\Nova;
 
+use App\Nova\Resource;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
+use Laravel\Nova\Fields\Boolean;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
 class NovaRedirectorSeo extends Resource
@@ -50,8 +52,19 @@ class NovaRedirectorSeo extends Resource
     {
         return [
             ID::make()->sortable(),
-            Text::make('From URL', 'from_url')->rules('required', 'string', 'max:255'),
-            Text::make('To URL', 'to_url')->rules('required', 'string', 'max:255'),
+            Boolean::make('enabled')->default(true),
+            Text::make('From URL', 'from_url')
+                ->rules('required', 'string', 'max:255')
+                ->withMeta(['extraAttributes' => [
+                    'placeholder' => 'posts/old-post']
+                ])
+            ->help('The URL you want to redirect from. You can use regular expressions.'),
+            Text::make('To URL', 'to_url')
+                ->rules('required', 'string', 'max:255')
+                ->withMeta(['extraAttributes' => [
+                    'placeholder' => '/posts/old-post or https://www.example.com/posts/old-post']
+                ])
+            ->help('The URL you want to redirect to.'),
             Select::make('Status Code', 'status_code')->options([
                 301 => '301 (Permanent)',
                 302 => '302 (Temporary)',

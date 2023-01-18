@@ -1,6 +1,6 @@
 <?php
 
-namespace The3LabsTeam\NovaRedirectorSeo\App\Middleware;
+namespace The3LabsTeam\NovaRedirectorSeo\App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\RedirectResponse;
