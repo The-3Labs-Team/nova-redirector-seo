@@ -9,7 +9,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redirect;
 use The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo;
 
-class NovaRedirectorMiddleware
+class NovaRedirectorSeoMiddleware
 {
     /**
      * Handle an incoming request.
