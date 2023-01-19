@@ -51,6 +51,10 @@ If you want to disable the cache, you can set the `ttl` to `null`.
 
 ## Usage
 
+Now it's time to configure the package.
+
+### Nova resource
+
 First, register the `NovaRedirectorSeo` tool in your `/app/Providers/NovaServiceProvider.php` (you will probably have to add the entire function):
 
 ```php
@@ -71,6 +75,8 @@ First, register the `NovaRedirectorSeo` tool in your `/app/Providers/NovaService
 
 Now you can access the tool in your Nova panel, under the "SEO" menu.
 
+### Middleware
+
 NovaRedirectorSeo is provided with a middleware that will redirect the user to the correct URL, if the current URL is not the correct one.
 
 You can add this middleware to your `app/Http/Kernel.php` file:
@@ -82,6 +88,125 @@ You can add this middleware to your `app/Http/Kernel.php` file:
             \The3LabsTeam\NovaRedirectorSeo\App\Http\Middleware\NovaRedirectorSeoMiddleware::class,
         ],
     ];
+```
+
+### Policies
+
+You can add a policy to the NovaRedirectorSeo resource, to restrict the access to the resource.
+
+First, you need to create a policy for the NovaRedirectorSeo resource:
+
+```bash
+php artisan make:policy NovaRedirectorSeoPolicy
+```
+
+Then, register the policy in your `app/Providers/AuthServiceProvider.php` file:
+
+```php
+    protected $policies = [
+        'The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo' => 'App\Policies\NovaRedirectorSeoPolicy',
+    ];
+```
+
+If you need, you can use this policy as a template:
+
+```php
+<?php
+
+namespace App\Policies;
+
+use App\Models\User;
+use The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class NovaRedirectorSeoPolicy
+{
+    use HandlesAuthorization;
+
+    /**
+     * Determine whether the user can view any models.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function viewAny(User $user)
+    {
+        return true;
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+
+    public function view(User $user, NovaRedirectorSeo $novaRedirectorSeo)
+    {
+        return true;
+    }
+
+    /**
+     * Determine whether the user can create models.
+     *
+     * @param  \App\Models\User  $user
+     * @param The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo $novaRedirectorSeo
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function create(User $user)
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function update(User $user, NovaRedirectorSeo $novaRedirectorSeo)
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function delete(User $user, NovaRedirectorSeo $novaRedirectorSeo)
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can restore the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function restore(User $user, NovaRedirectorSeo $novaRedirectorSeo)
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function forceDelete(User $user, NovaRedirectorSeo $novaRedirectorSeo)
+    {
+        return false;
+    }
+}
 ```
 
 
