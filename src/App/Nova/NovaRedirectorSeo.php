@@ -58,7 +58,7 @@ class NovaRedirectorSeo extends Resource
                 ->withMeta(['extraAttributes' => [
                     'placeholder' => 'posts/old-post']
                 ])
-            ->help('The URL you want to redirect from. You can use regular expressions.'),
+            ->help('The URL you want to redirect from.'),
             Text::make('To URL', 'to_url')
                 ->rules('required', 'string', 'max:255')
                 ->withMeta(['extraAttributes' => [

@@ -7,7 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redirect;
-use The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo;
+use The3LabsTeam\NovaRedirectorSeo\App\Helpers\NovaRedirectorSeoHelper;
 
 class NovaRedirectorSeoMiddleware
 {
@@ -21,16 +21,10 @@ class NovaRedirectorSeoMiddleware
     public function handle(Request $request, Closure $next)
     {
         $path = $request->path();
-
-        $redirect = cache()->remember(
-            "nova-redirector-seo.{$path}",
-            config('nova-redirector-seo.cache.ttl'),
-            function () use ($path) {
-                return NovaRedirectorSeo::where('from_url', 'regexp', $path)
-                    ->where('enabled', true)
-                    ->first();
-            }
-        );
+        $redirect = cache()->rememberForever('nova-redirector-seo.' . $path, function () use
+        ($path) {
+            return NovaRedirectorSeoHelper::checkRedirectExists($path);
+        });
 
         if ($redirect) {
             return Redirect::to($redirect->to_url, $redirect->status_code);
