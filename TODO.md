@@ -1,3 +1,4 @@
 - Support for regex and wildcards
 - Tests (I know, I know)
 - Translation setup and files
+- PHPstan fixes
