@@ -12,7 +12,8 @@ NovaRedirectorSEO is a all-in-one SEO package for Laravel Nova. It provides a si
 Why choose NovaRedirectorSEO?
 * **Pre-configured Laravel Nova resource**, you need only to install, register and configure the package.
 * **Middleware** to handle redirects, you can use it in your routes or in your controllers.
-* **Cache support**, based on your configuration, the package will cache the redirects.
+* **Cache support**, based on your configuration, the package will cache the redirects. Also, it flush caches when you create, update or delete a redirect.
+* **Regex support**, you can use regex in your redirects.
 
 ## Installation
 
