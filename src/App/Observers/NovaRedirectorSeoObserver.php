@@ -6,7 +6,6 @@ use The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo;
 
 class NovaRedirectorSeoObserver
 {
-
     /**
      * Handle the NovaRedirectorSeo "created" event.
      *
@@ -61,5 +60,4 @@ class NovaRedirectorSeoObserver
     {
         $this->clearCache($novaRedirectorSeo);
     }
-
 }

@@ -14,16 +14,15 @@ class NovaRedirectorSeoMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @param Closure(Request): (Response|RedirectResponse) $next
      * @return Response|RedirectResponse
      */
     public function handle(Request $request, Closure $next)
     {
         $path = $request->path();
-        $redirect = cache()->rememberForever('nova-redirector-seo.' . $path, function () use
-        ($path) {
-            return NovaRedirectorSeoHelper::checkRedirectExists($path);
+        $redirect = cache()->rememberForever('nova-redirector-seo.'.$path, function () use ($path) {
+            return NovaRedirectorSeoHelper::handle($path);
         });
 
         if ($redirect) {
