@@ -83,12 +83,9 @@ NovaRedirectorSeo is provided with a middleware that will redirect the user to t
 You can add this middleware to your `app/Http/Kernel.php` file:
 
 ```php
-    protected $middlewareGroups = [
-        'web' => [
-            // ...
-            \The3LabsTeam\NovaRedirectorSeo\App\Http\Middleware\NovaRedirectorSeoMiddleware::class,
-        ],
-    ];
+    protected $middleware = [
+        \The3LabsTeam\NovaRedirectorSeo\App\Http\Middleware\NovaRedirectorSeoMiddleware::class,
+        //...
 ```
 
 ### Policies
