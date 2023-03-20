@@ -19,6 +19,7 @@ class NovaRedirectorSeoServiceProvider extends PackageServiceProvider
             ->name('nova-redirector-seo')
             ->hasConfigFile()
             ->hasViews()
+            ->hasTranslations()
             ->hasMigration('create_nova-redirector-seo_table')
             ->hasCommand(NovaRedirectorSeoCommand::class);
     }

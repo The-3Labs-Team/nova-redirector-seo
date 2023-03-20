@@ -1,0 +1,15 @@
+{
+  "Redirect SEO": "Redirect SEO",
+  "SEO": "SEO",
+  "Enabled": "Enabled",
+  "From URL": "From URL",
+  "The URL you want to redirect from.": "The URL you want to redirect from.",
+  "The URL you want to redirect to.": "The URL you want to redirect to.",
+  "Status Code": "Status Code",
+  "301 (Permanent)": "301 (Permanent)",
+  "302 (Temporary)": "302 (Temporary)",
+  "Is Regex": "Is Regex",
+  "If you want to use regex for the from_url, check this box.": "If you want to use regex for the from_url, check this box.",
+  "posts/old-post or /posts\\/(.*)": "posts/old-post or /posts\\/(.*)",
+  "/posts/old-post or https://www.example.com/posts/old-post or /posts/$1": "/posts/old-post or https://www.example.com/posts/old-post or /posts/$1"
+}
