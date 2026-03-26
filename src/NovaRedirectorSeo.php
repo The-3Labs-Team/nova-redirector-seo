@@ -2,6 +2,4 @@
 
 namespace The3LabsTeam\NovaRedirectorSeo;
 
-class NovaRedirectorSeo
-{
-}
+class NovaRedirectorSeo {}

@@ -1,0 +1,53 @@
+name: post-merge-release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag to release, for example v1.0.3"
+        required: false
+      title:
+        description: "Release title"
+        required: false
+      notes:
+        description: "Release notes"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+
+      - name: Validate composer
+        run: composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run release checks
+        run: |
+          composer test
+          composer analyse
+
+      - name: Create release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.version }}" \
+            --title "${{ inputs.title || inputs.version }}" \
+            --notes "${{ inputs.notes }}"

@@ -4,6 +4,8 @@ namespace The3LabsTeam\NovaRedirectorSeo;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo as NovaRedirectorSeoModel;
+use The3LabsTeam\NovaRedirectorSeo\App\Observers\NovaRedirectorSeoObserver;
 use The3LabsTeam\NovaRedirectorSeo\Commands\NovaRedirectorSeoCommand;
 
 class NovaRedirectorSeoServiceProvider extends PackageServiceProvider
@@ -22,5 +24,10 @@ class NovaRedirectorSeoServiceProvider extends PackageServiceProvider
             ->hasTranslations()
             ->hasMigration('create_nova-redirector-seo_table')
             ->hasCommand(NovaRedirectorSeoCommand::class);
+    }
+
+    public function packageBooted(): void
+    {
+        NovaRedirectorSeoModel::observe(NovaRedirectorSeoObserver::class);
     }
 }
