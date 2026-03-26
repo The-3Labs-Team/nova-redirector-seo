@@ -10,10 +10,8 @@ class NovaRedirectorSeoHelper
      * The first function to be called when the redirect is triggered.
      * It will check if the given path matches to any regex or exact rule.
      * If it matches, it will return the redirect object.
-     * @param  string  $path
-     * @return object|null
      */
-    public static function handle(string $path): object|null
+    public static function handle(string $path): ?object
     {
         $redirect = self::challengeRegex($path) ?? self::challengeExact($path) ?? null;
         if ($redirect) {
@@ -22,6 +20,7 @@ class NovaRedirectorSeoHelper
                 'status_code' => $redirect->status_code,
             ];
         }
+
         return null;
     }
 
@@ -30,7 +29,6 @@ class NovaRedirectorSeoHelper
      * If it matches, return the redirect object.
      * If it doesn't match, return null.
      *
-     * @param  string  $path
      * @return object|null
      */
     private static function challengeRegex(string $path)
@@ -58,7 +56,6 @@ class NovaRedirectorSeoHelper
      * If it matches, return the redirect object.
      * If it doesn't match, return null.
      *
-     * @param  string  $path
      * @return object|null
      */
     private static function challengeExact(string $path)
@@ -83,17 +80,13 @@ class NovaRedirectorSeoHelper
 
     /**
      * Test if the regex provided by the user is valid.
-     *
-     * @param $regex
-     * @param $path
-     * @return false|int
      */
-    private static function testRegex(string $regex, string $path): false|int
+    private static function testRegex(string $regex, string $path): bool
     {
-        if (@preg_match("/$regex/", null) === false) {
+        if (@preg_match("/$regex/", '') === false) {
             return false;
         }
 
-        return preg_match("/$regex/", $path);
+        return preg_match("/$regex/", $path) === 1;
     }
 }

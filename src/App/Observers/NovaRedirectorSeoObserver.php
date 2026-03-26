@@ -9,7 +9,6 @@ class NovaRedirectorSeoObserver
     /**
      * Handle the NovaRedirectorSeo "created" event.
      *
-     * @param  \The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
      * @return void
      */
     public function created(NovaRedirectorSeo $novaRedirectorSeo)
@@ -20,7 +19,6 @@ class NovaRedirectorSeoObserver
     /**
      * Handle the NovaRedirectorSeo "updated" event.
      *
-     * @param  \The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
      * @return void
      */
     public function updated(NovaRedirectorSeo $novaRedirectorSeo)
@@ -31,7 +29,6 @@ class NovaRedirectorSeoObserver
     /**
      * Handle the NovaRedirectorSeo "deleted" event.
      *
-     * @param  \The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
      * @return void
      */
     public function deleted(NovaRedirectorSeo $novaRedirectorSeo)
@@ -42,7 +39,6 @@ class NovaRedirectorSeoObserver
     /**
      * Handle the NovaRedirectorSeo "restored" event.
      *
-     * @param  \The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
      * @return void
      */
     public function restored(NovaRedirectorSeo $novaRedirectorSeo)
@@ -53,11 +49,21 @@ class NovaRedirectorSeoObserver
     /**
      * Handle the NovaRedirectorSeo "force deleted" event.
      *
-     * @param  \The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo  $novaRedirectorSeo
      * @return void
      */
     public function forceDeleted(NovaRedirectorSeo $novaRedirectorSeo)
     {
         $this->clearCache($novaRedirectorSeo);
+    }
+
+    private function clearCache(NovaRedirectorSeo $novaRedirectorSeo): void
+    {
+        $originalPath = $novaRedirectorSeo->getOriginal('from_url');
+
+        if (is_string($originalPath) && $originalPath !== '') {
+            cache()->forget(NovaRedirectorSeo::cacheKey($originalPath));
+        }
+
+        $novaRedirectorSeo->clearCache();
     }
 }
