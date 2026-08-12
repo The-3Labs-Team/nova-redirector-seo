@@ -33,13 +33,16 @@ class NovaRedirectorSeo extends Model
         ];
     }
 
-    public static function cacheKey(string $fromUrl): string
+    /**
+     * The single entry holding every enabled rule.
+     */
+    public static function cacheKey(): string
     {
-        return "nova-redirector-seo.{$fromUrl}";
+        return 'nova-redirector-seo.rules';
     }
 
     public function clearCache(): void
     {
-        cache()->forget(self::cacheKey($this->from_url));
+        cache()->forget(self::cacheKey());
     }
 }

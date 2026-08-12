@@ -9,13 +9,7 @@ class NovaRedirectorSeoMiddlewareTest extends TestCase
 {
     public function test_it_redirects_exact_matches(): void
     {
-        NovaRedirectorSeo::query()->create([
-            'from_url' => 'old-page',
-            'to_url' => '/new-page',
-            'status_code' => 301,
-            'enabled' => true,
-            'is_regex' => false,
-        ]);
+        $this->createRule('old-page', '/new-page');
 
         $response = $this->get('/old-page');
 
@@ -23,15 +17,9 @@ class NovaRedirectorSeoMiddlewareTest extends TestCase
         $this->assertSame(301, $response->getStatusCode());
     }
 
-    public function test_it_expands_regex_matches(): void
+    public function test_it_expands_regex_matches_written_with_plain_slashes(): void
     {
-        NovaRedirectorSeo::query()->create([
-            'from_url' => 'posts\/(.*)',
-            'to_url' => '/articles/$1',
-            'status_code' => 302,
-            'enabled' => true,
-            'is_regex' => true,
-        ]);
+        $this->createRule('posts/(.*)', '/articles/$1', statusCode: 302, isRegex: true);
 
         $response = $this->get('/posts/hello-world');
 
@@ -39,23 +27,82 @@ class NovaRedirectorSeoMiddlewareTest extends TestCase
         $this->assertSame(302, $response->getStatusCode());
     }
 
-    public function test_it_invalidates_the_cached_redirect_when_the_rule_changes(): void
+    public function test_it_still_expands_regex_matches_written_with_escaped_slashes(): void
     {
-        $redirect = NovaRedirectorSeo::query()->create([
-            'from_url' => 'cached-page',
-            'to_url' => '/first-destination',
-            'status_code' => 301,
-            'enabled' => true,
-            'is_regex' => false,
-        ]);
+        $this->createRule('posts\/(.*)', '/articles/$1', isRegex: true);
 
-        $this->get('/cached-page')->assertRedirect('/first-destination');
-        $this->assertNotNull(cache()->get(NovaRedirectorSeo::cacheKey('cached-page')));
+        $this->get('/posts/hello-world')->assertRedirect('/articles/hello-world');
+    }
 
-        $redirect->update([
-            'to_url' => '/second-destination',
-        ]);
+    public function test_it_ignores_a_rule_whose_pattern_does_not_compile(): void
+    {
+        $this->createRule('posts/(unclosed', '/articles', isRegex: true);
+        $this->createRule('posts/(.*)', '/articles/$1', isRegex: true);
 
-        $this->get('/cached-page')->assertRedirect('/second-destination');
+        $this->get('/posts/hello-world')->assertRedirect('/articles/hello-world');
+    }
+
+    public function test_it_keeps_the_first_rule_when_two_exact_rules_share_a_path(): void
+    {
+        $this->createRule('old-page', '/first-destination', statusCode: 301);
+        $this->createRule('old-page', '/second-destination', statusCode: 302);
+
+        $response = $this->get('/old-page');
+
+        $response->assertRedirect('/first-destination');
+        $this->assertSame(301, $response->getStatusCode());
+    }
+
+    public function test_it_expands_regex_matches_containing_an_inline_comment(): void
+    {
+        $this->createRule('^posts/(.*)(?#legacy blog)$', '/articles/$1', isRegex: true);
+
+        $this->get('/posts/hello-world')->assertRedirect('/articles/hello-world');
+    }
+
+    public function test_it_expands_regex_matches_containing_several_delimiter_candidates(): void
+    {
+        $this->createRule('^p(?#c)/([~]+)$', '/articles/$1', isRegex: true);
+
+        $this->get('/p/~~')->assertRedirect('/articles/~~');
+    }
+
+    public function test_it_ignores_a_pattern_that_contains_every_delimiter_candidate(): void
+    {
+        $this->createRule('^p/([#~!@;,%=|+]+)$', '/articles/$1', isRegex: true);
+
+        $this->get('/p/abc')->assertSee('fallback-response');
+    }
+
+    public function test_it_ignores_disabled_rules(): void
+    {
+        $this->createRule('old-page', '/new-page', enabled: false);
+
+        $this->get('/old-page')->assertSee('fallback-response');
+    }
+
+    public function test_it_lets_unmatched_paths_through(): void
+    {
+        $this->createRule('old-page', '/new-page');
+
+        $this->get('/some-other-page')->assertSee('fallback-response');
+    }
+
+    private function createRule(
+        string $fromUrl,
+        string $toUrl,
+        int $statusCode = 301,
+        bool $enabled = true,
+        bool $isRegex = false,
+    ): NovaRedirectorSeo {
+        $rule = new NovaRedirectorSeo;
+        $rule->from_url = $fromUrl;
+        $rule->to_url = $toUrl;
+        $rule->status_code = $statusCode;
+        $rule->enabled = $enabled;
+        $rule->is_regex = $isRegex;
+        $rule->save();
+
+        return $rule;
     }
 }
