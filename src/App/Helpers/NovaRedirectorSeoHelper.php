@@ -13,11 +13,92 @@ class NovaRedirectorSeoHelper
      */
     public static function handle(string $path): ?object
     {
-        $redirect = self::challengeRegex($path) ?? self::challengeExact($path) ?? null;
-        if ($redirect) {
+        $rules = self::rules();
+
+        return self::challengeRegex($rules['regex'], $path)
+            ?? self::challengeExact($rules['exact'], $path);
+    }
+
+    /**
+     * Every enabled rule, kept in a single cache entry.
+     *
+     * The whole set is cached at once instead of one entry per visited path: the
+     * rules are few and shared by every request, while the paths are unbounded —
+     * a crawler alone visits enough distinct URLs to fill the cache store with
+     * entries that are never read twice.
+     *
+     * @return array{exact: array<string, array{to_url: string, status_code: int}>, regex: array<int, array{from_url: string, to_url: string, status_code: int}>}
+     */
+    private static function rules(): array
+    {
+        $ttl = config('nova-redirector-seo.cache.ttl');
+
+        if ($ttl === null || (int) $ttl < 1) {
+            return self::loadRules();
+        }
+
+        return cache()->remember(
+            NovaRedirectorSeo::cacheKey(),
+            (int) $ttl,
+            static fn (): array => self::loadRules(),
+        );
+    }
+
+    /**
+     * @return array{exact: array<string, array{to_url: string, status_code: int}>, regex: array<int, array{from_url: string, to_url: string, status_code: int}>}
+     */
+    private static function loadRules(): array
+    {
+        $rules = ['exact' => [], 'regex' => []];
+
+        $enabled = NovaRedirectorSeo::query()
+            ->where('enabled', true)
+            ->orderBy('id')
+            ->get(['from_url', 'to_url', 'status_code', 'is_regex']);
+
+        foreach ($enabled as $rule) {
+            if ($rule->from_url === '' || $rule->to_url === '') {
+                continue;
+            }
+
+            if ($rule->is_regex) {
+                $rules['regex'][] = [
+                    'from_url' => $rule->from_url,
+                    'to_url' => $rule->to_url,
+                    'status_code' => (int) $rule->status_code,
+                ];
+
+                continue;
+            }
+
+            $rules['exact'][$rule->from_url] = [
+                'to_url' => $rule->to_url,
+                'status_code' => (int) $rule->status_code,
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Determine if the given path matches to any regex rule.
+     * If it matches, return the redirect object.
+     * If it doesn't match, return null.
+     *
+     * @param  array<int, array{from_url: string, to_url: string, status_code: int}>  $rules
+     */
+    private static function challengeRegex(array $rules, string $path): ?object
+    {
+        foreach ($rules as $rule) {
+            $pattern = self::compilePattern($rule['from_url']);
+
+            if ($pattern === null || preg_match($pattern, $path) !== 1) {
+                continue;
+            }
+
             return (object) [
-                'to_url' => $redirect->to_url,
-                'status_code' => $redirect->status_code,
+                'to_url' => preg_replace($pattern, $rule['to_url'], $path),
+                'status_code' => $rule['status_code'],
             ];
         }
 
@@ -25,68 +106,42 @@ class NovaRedirectorSeoHelper
     }
 
     /**
-     * Determine if the given path matches to any regex saved in the database.
+     * Determine if the given path matches to any exact rule.
      * If it matches, return the redirect object.
      * If it doesn't match, return null.
      *
-     * @return object|null
+     * @param  array<string, array{to_url: string, status_code: int}>  $rules
      */
-    private static function challengeRegex(string $path)
+    private static function challengeExact(array $rules, string $path): ?object
     {
-        $regexRules = NovaRedirectorSeo::where('enabled', true)
-            ->where('is_regex', true)
-            ->get();
+        $rule = $rules[$path] ?? null;
 
-        foreach ($regexRules as $regex) {
-            if (self::testRegex($regex->from_url, $path)) {
-                $toUrl = preg_replace("/$regex->from_url/", $regex->to_url, $path);
-
-                return (object) [
-                    'to_url' => $toUrl,
-                    'status_code' => $regex->status_code,
-                ];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Determine if the given path matches to any exact saved in the database.
-     * If it matches, return the redirect object.
-     * If it doesn't match, return null.
-     *
-     * @return object|null
-     */
-    private static function challengeExact(string $path)
-    {
-        $query = NovaRedirectorSeo::where('from_url', $path)
-            ->where('enabled', true)
-            ->where('is_regex', false)
-            ->first();
-        $fromUrl = $query->from_url ?? null;
-        $toUrl = $query->to_url ?? null;
-        $statusCode = $query->status_code ?? 301;
-
-        if (! $fromUrl || ! $toUrl) {
+        if ($rule === null) {
             return null;
         }
 
         return (object) [
-            'to_url' => $toUrl,
-            'status_code' => $statusCode,
+            'to_url' => $rule['to_url'],
+            'status_code' => $rule['status_code'] ?: 301,
         ];
     }
 
     /**
-     * Test if the regex provided by the user is valid.
+     * Wrap a stored pattern in a delimiter it is allowed to contain.
+     *
+     * Rules are written as bare expressions such as `posts/(.*)`, so slashes are
+     * expected and must not end the expression: `#` is used as the delimiter and
+     * escaped where the author wrote it literally. Returns null when the pattern
+     * does not compile, so one broken rule cannot take the redirector down.
      */
-    private static function testRegex(string $regex, string $path): bool
+    private static function compilePattern(string $pattern): ?string
     {
-        if (@preg_match("/$regex/", '') === false) {
-            return false;
+        $delimited = '#'.preg_replace('/(?<!\\\\)#/', '\\#', $pattern).'#';
+
+        if (@preg_match($delimited, '') === false) {
+            return null;
         }
 
-        return preg_match("/$regex/", $path) === 1;
+        return $delimited;
     }
 }

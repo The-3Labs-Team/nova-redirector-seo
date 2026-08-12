@@ -1,4 +1,2 @@
-- Support for regex and wildcards
-- Tests (I know, I know)
 - Translation setup and files
-- PHPstan fixes
+- Support status codes other than 301/302 (410 Gone would need a non-redirect response)

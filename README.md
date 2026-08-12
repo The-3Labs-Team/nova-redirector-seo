@@ -88,6 +88,38 @@ You can add this middleware to your `app/Http/Kernel.php` file:
         //...
 ```
 
+### Writing rules
+
+**From URL** is matched against the request path, without the leading slash: write `old-page`
+or `blog/old-post`, not `/old-page`. **To URL** is passed to Laravel's redirector, so both a
+path (`/new-page`) and an absolute URL (`https://example.com/new-page`) work.
+
+Tick **Is Regex** to match a family of paths. Patterns are stored as bare expressions — no
+delimiters — and slashes need no escaping:
+
+| From URL | To URL | Result |
+|---|---|---|
+| `posts/(.*)` | `/articles/$1` | `posts/hello` → `/articles/hello` |
+| `^shop/(\d+)$` | `/products/$1` | `shop/42` → `/products/42` |
+
+Capture groups are available in **To URL** as `$1`, `$2`, and so on. Anchor the pattern with
+`^` and `$` unless you deliberately want to match anywhere in the path: `posts/(.*)` also
+matches `archive/posts/hello`. A pattern that does not compile is skipped, so a malformed
+rule can never take the redirector down — but it will silently never fire, so test it after
+saving.
+
+Regex rules are evaluated before exact ones, in id order, and the first match wins.
+
+### Caching
+
+Every enabled rule is kept in a **single** cache entry, and the whole set is read once per
+request. The cache is flushed automatically whenever a rule is created, updated, deleted or
+restored, so changes made in Nova take effect immediately.
+
+Set `cache.ttl` to `null` or `0` to read the rules from the database on every request. This
+is only worth doing while debugging: the middleware runs on every request your application
+serves.
+
 ### Policies
 
 You can add a policy to the NovaRedirectorSeo resource, to restrict the access to the resource.
