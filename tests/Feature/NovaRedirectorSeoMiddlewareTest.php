@@ -42,6 +42,38 @@ class NovaRedirectorSeoMiddlewareTest extends TestCase
         $this->get('/posts/hello-world')->assertRedirect('/articles/hello-world');
     }
 
+    public function test_it_keeps_the_first_rule_when_two_exact_rules_share_a_path(): void
+    {
+        $this->createRule('old-page', '/first-destination', statusCode: 301);
+        $this->createRule('old-page', '/second-destination', statusCode: 302);
+
+        $response = $this->get('/old-page');
+
+        $response->assertRedirect('/first-destination');
+        $this->assertSame(301, $response->getStatusCode());
+    }
+
+    public function test_it_expands_regex_matches_containing_an_inline_comment(): void
+    {
+        $this->createRule('^posts/(.*)(?#legacy blog)$', '/articles/$1', isRegex: true);
+
+        $this->get('/posts/hello-world')->assertRedirect('/articles/hello-world');
+    }
+
+    public function test_it_expands_regex_matches_containing_several_delimiter_candidates(): void
+    {
+        $this->createRule('^p(?#c)/([~]+)$', '/articles/$1', isRegex: true);
+
+        $this->get('/p/~~')->assertRedirect('/articles/~~');
+    }
+
+    public function test_it_ignores_a_pattern_that_contains_every_delimiter_candidate(): void
+    {
+        $this->createRule('^p/([#~!@;,%=|+]+)$', '/articles/$1', isRegex: true);
+
+        $this->get('/p/abc')->assertSee('fallback-response');
+    }
+
     public function test_it_ignores_disabled_rules(): void
     {
         $this->createRule('old-page', '/new-page', enabled: false);

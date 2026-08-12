@@ -108,7 +108,12 @@ matches `archive/posts/hello`. A pattern that does not compile is skipped, so a 
 rule can never take the redirector down — but it will silently never fire, so test it after
 saving.
 
-Regex rules are evaluated before exact ones, in id order, and the first match wins.
+Regex rules are evaluated before exact ones, in id order, and the first match wins — that
+also applies to two exact rules sharing the same **From URL**: the lower id is used.
+
+Patterns are never rewritten before compiling: the expression is wrapped in one of
+`# ~ ! @ ; , % = | +`, whichever it does not already contain, so constructs like
+`(?#comment)` keep their meaning. A pattern containing all ten is skipped.
 
 ### Caching
 

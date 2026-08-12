@@ -7,6 +7,14 @@ use The3LabsTeam\NovaRedirectorSeo\App\Models\NovaRedirectorSeo;
 class NovaRedirectorSeoHelper
 {
     /**
+     * Delimiter candidates for stored patterns, in order of preference. Slashes are
+     * absent on purpose: they are the one character every URL pattern contains.
+     *
+     * @var array<int, string>
+     */
+    private const DELIMITERS = ['#', '~', '!', '@', ';', ',', '%', '=', '|', '+'];
+
+    /**
      * The first function to be called when the redirect is triggered.
      * It will check if the given path matches to any regex or exact rule.
      * If it matches, it will return the redirect object.
@@ -71,6 +79,10 @@ class NovaRedirectorSeoHelper
                 continue;
             }
 
+            if (array_key_exists($rule->from_url, $rules['exact'])) {
+                continue;
+            }
+
             $rules['exact'][$rule->from_url] = [
                 'to_url' => $rule->to_url,
                 'status_code' => (int) $rule->status_code,
@@ -127,21 +139,28 @@ class NovaRedirectorSeoHelper
     }
 
     /**
-     * Wrap a stored pattern in a delimiter it is allowed to contain.
+     * Wrap a stored pattern in a delimiter the pattern does not contain.
      *
      * Rules are written as bare expressions such as `posts/(.*)`, so slashes are
-     * expected and must not end the expression: `#` is used as the delimiter and
-     * escaped where the author wrote it literally. Returns null when the pattern
-     * does not compile, so one broken rule cannot take the redirector down.
+     * expected and must not end the expression. The pattern itself is never
+     * rewritten: escaping an occurrence would change the constructs that give
+     * that character meaning — `(?#comment)`, or `#` starting a comment under
+     * the `x` modifier — so a delimiter absent from the pattern is picked
+     * instead. Returns null when the pattern does not compile, so one broken
+     * rule cannot take the redirector down.
      */
     private static function compilePattern(string $pattern): ?string
     {
-        $delimited = '#'.preg_replace('/(?<!\\\\)#/', '\\#', $pattern).'#';
+        foreach (self::DELIMITERS as $delimiter) {
+            if (str_contains($pattern, $delimiter)) {
+                continue;
+            }
 
-        if (@preg_match($delimited, '') === false) {
-            return null;
+            $delimited = $delimiter.$pattern.$delimiter;
+
+            return @preg_match($delimited, '') === false ? null : $delimited;
         }
 
-        return $delimited;
+        return null;
     }
 }
