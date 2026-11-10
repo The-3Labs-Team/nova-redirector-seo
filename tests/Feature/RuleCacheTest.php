@@ -8,25 +8,50 @@ use The3LabsTeam\NovaRedirectorSeo\Tests\TestCase;
 
 class RuleCacheTest extends TestCase
 {
-    public function test_it_reads_the_rules_once_for_paths_that_do_not_match(): void
+    public function test_it_runs_one_query_per_request_for_paths_that_do_not_match(): void
     {
         $this->createRule('old-page', '/new-page');
+        $this->createRule('posts/(.*)', '/articles/$1', isRegex: true);
 
         $this->get('/first-unmatched-path')->assertSee('fallback-response');
 
-        $this->get('/second-unmatched-path')->assertSee('fallback-response');
-        $this->get('/third-unmatched-path')->assertSee('fallback-response');
-
-        $this->assertSame(0, $this->countRuleQueries(fn () => $this->get('/fourth-unmatched-path')));
+        $this->assertSame(1, $this->countRuleQueries(fn () => $this->get('/second-unmatched-path')));
     }
 
-    public function test_it_reads_the_rules_once_for_paths_that_match(): void
+    public function test_it_runs_one_query_per_request_for_paths_that_match(): void
     {
         $this->createRule('old-page', '/new-page');
+        $this->createRule('posts/(.*)', '/articles/$1', isRegex: true);
 
         $this->get('/old-page')->assertRedirect('/new-page');
 
-        $this->assertSame(0, $this->countRuleQueries(fn () => $this->get('/old-page')));
+        $this->assertSame(1, $this->countRuleQueries(fn () => $this->get('/old-page')));
+    }
+
+    public function test_it_keeps_only_the_regex_rules_in_the_cache(): void
+    {
+        $this->createRule('old-page', '/new-page');
+        $this->createRule('posts/(.*)', '/articles/$1', isRegex: true);
+
+        $this->get('/old-page')->assertRedirect('/new-page');
+
+        $cached = serialize(cache()->get(NovaRedirectorSeo::cacheKey()));
+
+        $this->assertStringContainsString('posts/(.*)', $cached);
+        $this->assertStringNotContainsString('old-page', $cached);
+    }
+
+    public function test_it_reads_the_exact_rules_from_the_database_on_every_request(): void
+    {
+        $rule = $this->createRule('old-page', '/new-page');
+
+        $this->get('/old-page')->assertRedirect('/new-page');
+
+        DB::table('nova_redirector_seo')
+            ->where('id', $rule->id)
+            ->update(['to_url' => '/second-destination']);
+
+        $this->get('/old-page')->assertRedirect('/second-destination');
     }
 
     public function test_it_invalidates_the_cache_when_a_rule_changes(): void

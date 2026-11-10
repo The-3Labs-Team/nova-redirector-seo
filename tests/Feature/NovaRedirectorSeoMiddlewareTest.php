@@ -81,6 +81,14 @@ class NovaRedirectorSeoMiddlewareTest extends TestCase
         $this->get('/old-page')->assertSee('fallback-response');
     }
 
+    public function test_it_skips_an_exact_rule_without_a_destination(): void
+    {
+        $this->createRule('old-page', '');
+        $this->createRule('old-page', '/new-page');
+
+        $this->get('/old-page')->assertRedirect('/new-page');
+    }
+
     public function test_it_lets_unmatched_paths_through(): void
     {
         $this->createRule('old-page', '/new-page');

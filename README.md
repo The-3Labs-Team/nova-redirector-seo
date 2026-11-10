@@ -117,13 +117,14 @@ Patterns are never rewritten before compiling: the expression is wrapped in one 
 
 ### Caching
 
-Every enabled rule is kept in a **single** cache entry, and the whole set is read once per
-request. The cache is flushed automatically whenever a rule is created, updated, deleted or
-restored, so changes made in Nova take effect immediately.
+Exact rules are looked up in the database on every request, with one indexed query on
+**From URL**, so a request needs the same memory with ten rules or hundreds of thousands.
 
-Set `cache.ttl` to `null` or `0` to read the rules from the database on every request. This
-is only worth doing while debugging: the middleware runs on every request your application
-serves.
+Regex rules are kept in a **single** cache entry. The cache is flushed automatically whenever
+a rule is created, updated, deleted or restored, so changes made in Nova take effect
+immediately.
+
+Set `cache.ttl` to `null` or `0` to read the regex rules from the database on every request.
 
 ### Policies
 

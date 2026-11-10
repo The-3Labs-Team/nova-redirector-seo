@@ -34,11 +34,11 @@ class NovaRedirectorSeo extends Model
     }
 
     /**
-     * The single entry holding every enabled rule.
+     * The single entry holding every enabled regex rule.
      */
     public static function cacheKey(): string
     {
-        return 'nova-redirector-seo.rules';
+        return 'nova-redirector-seo.regex-rules';
     }
 
     public function clearCache(): void

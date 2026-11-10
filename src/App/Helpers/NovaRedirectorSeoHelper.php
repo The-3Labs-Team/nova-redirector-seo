@@ -21,75 +21,50 @@ class NovaRedirectorSeoHelper
      */
     public static function handle(string $path): ?object
     {
-        $rules = self::rules();
-
-        return self::challengeRegex($rules['regex'], $path)
-            ?? self::challengeExact($rules['exact'], $path);
+        return self::challengeRegex(self::regexRules(), $path)
+            ?? self::challengeExact($path);
     }
 
     /**
-     * Every enabled rule, kept in a single cache entry.
+     * Every enabled regex rule, kept in a single cache entry.
      *
-     * The whole set is cached at once instead of one entry per visited path: the
-     * rules are few and shared by every request, while the paths are unbounded —
-     * a crawler alone visits enough distinct URLs to fill the cache store with
-     * entries that are never read twice.
-     *
-     * @return array{exact: array<string, array{to_url: string, status_code: int}>, regex: array<int, array{from_url: string, to_url: string, status_code: int}>}
+     * @return array<int, array{from_url: string, to_url: string, status_code: int}>
      */
-    private static function rules(): array
+    private static function regexRules(): array
     {
         $ttl = config('nova-redirector-seo.cache.ttl');
 
         if ($ttl === null || (int) $ttl < 1) {
-            return self::loadRules();
+            return self::loadRegexRules();
         }
 
         return cache()->remember(
             NovaRedirectorSeo::cacheKey(),
             (int) $ttl,
-            static fn (): array => self::loadRules(),
+            static fn (): array => self::loadRegexRules(),
         );
     }
 
     /**
-     * @return array{exact: array<string, array{to_url: string, status_code: int}>, regex: array<int, array{from_url: string, to_url: string, status_code: int}>}
+     * Read every enabled regex rule from the database.
+     *
+     * @return array<int, array{from_url: string, to_url: string, status_code: int}>
      */
-    private static function loadRules(): array
+    private static function loadRegexRules(): array
     {
-        $rules = ['exact' => [], 'regex' => []];
-
-        $enabled = NovaRedirectorSeo::query()
+        return NovaRedirectorSeo::query()
             ->where('enabled', true)
+            ->where('is_regex', true)
+            ->where('from_url', '!=', '')
+            ->where('to_url', '!=', '')
             ->orderBy('id')
-            ->get(['from_url', 'to_url', 'status_code', 'is_regex']);
-
-        foreach ($enabled as $rule) {
-            if ($rule->from_url === '' || $rule->to_url === '') {
-                continue;
-            }
-
-            if ($rule->is_regex) {
-                $rules['regex'][] = [
-                    'from_url' => $rule->from_url,
-                    'to_url' => $rule->to_url,
-                    'status_code' => (int) $rule->status_code,
-                ];
-
-                continue;
-            }
-
-            if (array_key_exists($rule->from_url, $rules['exact'])) {
-                continue;
-            }
-
-            $rules['exact'][$rule->from_url] = [
+            ->get(['from_url', 'to_url', 'status_code'])
+            ->map(static fn (NovaRedirectorSeo $rule): array => [
+                'from_url' => $rule->from_url,
                 'to_url' => $rule->to_url,
                 'status_code' => (int) $rule->status_code,
-            ];
-        }
-
-        return $rules;
+            ])
+            ->all();
     }
 
     /**
@@ -118,23 +93,27 @@ class NovaRedirectorSeoHelper
     }
 
     /**
-     * Determine if the given path matches to any exact rule.
+     * Find the first enabled exact rule for the given path in the database.
      * If it matches, return the redirect object.
      * If it doesn't match, return null.
-     *
-     * @param  array<string, array{to_url: string, status_code: int}>  $rules
      */
-    private static function challengeExact(array $rules, string $path): ?object
+    private static function challengeExact(string $path): ?object
     {
-        $rule = $rules[$path] ?? null;
+        $rule = NovaRedirectorSeo::query()
+            ->where('from_url', $path)
+            ->where('enabled', true)
+            ->where('is_regex', false)
+            ->where('to_url', '!=', '')
+            ->orderBy('id')
+            ->first(['to_url', 'status_code']);
 
         if ($rule === null) {
             return null;
         }
 
         return (object) [
-            'to_url' => $rule['to_url'],
-            'status_code' => $rule['status_code'] ?: 301,
+            'to_url' => $rule->to_url,
+            'status_code' => (int) $rule->status_code ?: 301,
         ];
     }
 
